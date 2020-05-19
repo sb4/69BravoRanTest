@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">69BravoRanTest</string>
+    <string name="camera">CAMERA</string>
+    <string name="pumpkin_topoff">PUMPKIN TOP OFF</string>
+    <string name="dust_mitigation">DUST MITIGATION</string>
+    <string name="alarms">"ALARMS  "</string>
+    <string name="water_usage">WATER USAGE</string>
+    <string name="wind_sock_lights">WIND SOCK LIGHTS</string>
+    <string name="weather">"WEATHER "</string>
+    <string name="sensors">SENSORS</string>
+</resources>
