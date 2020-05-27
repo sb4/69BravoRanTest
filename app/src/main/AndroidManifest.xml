@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.android.bravo69rantest">
-    <!-- Added internet, networking permissions -RAN 5/13/2020-->
+    <!-- Added internet, networking permissions -RAN 5/13/2020 -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
@@ -11,12 +11,14 @@
         android:label="bravo69rantest"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"
-        >
-
-        <activity android:name="com.example.android.bravo69rantest.SensorsActivity" />
-        <activity android:name="com.example.android.bravo69rantest.SqlTestActivity" />
-        <activity android:name="com.example.android.bravo69rantest.MainActivity">
+        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+        <activity
+            android:name=".ui.login.LoginActivity"
+            android:label="@string/title_activity_login"></activity>
+        <activity android:name=".SensorsActivity" />
+        <activity android:name=".WaterActivity" />
+        <activity android:name=".SqlTestActivity" />
+        <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
