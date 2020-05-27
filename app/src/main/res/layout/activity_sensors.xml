@@ -8,23 +8,23 @@
     android:orientation="vertical"
     tools:context=".SensorsActivity">
 
-    <Button
-        android:id="@+id/buttonGetData"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickButtonGetData"
-        android:text="Get Sensor Data"
-        android:visibility="gone" />
-
-    <Button
-        android:id="@+id/buttonExit"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:includeFontPadding="false"
-        android:minHeight="32dp"
-        android:onClick="onClickExit"
-        android:text="Exit" />
-
+    <!--
+        <Button
+            android:id="@+id/buttonGetData"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="onClickButtonGetData"
+            android:text="Get Sensor Data"
+            android:visibility="gone" />
+        <Button
+            android:id="@+id/buttonExit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:minHeight="32dp"
+            android:onClick="onClickExit"
+            android:text="Exit" />
+    -->
     <TextView
         android:id="@+id/textViewLastRefresh"
         android:layout_width="wrap_content"
