@@ -31,6 +31,25 @@ public class InternetUtils
         return strResponse;
     }
 
+    public static final String HOST_PAT = "{host}";
+    public static final String LOGIN_PAT = "{login}";
+    public static final String PASSWORD_PAT = "{password}";
+
+    public static String getResolvedUrl(String url, String host, String login, String password)
+    {
+        int ix;
+
+        StringBuilder sbuf = new StringBuilder(url);
+        ix = sbuf.indexOf(HOST_PAT);
+        sbuf.replace(ix, ix + HOST_PAT.length(), host);
+        ix = sbuf.indexOf(LOGIN_PAT);
+        sbuf.replace(ix, ix + LOGIN_PAT.length(), login);
+        ix = sbuf.indexOf(PASSWORD_PAT);
+        sbuf.replace(ix, ix + PASSWORD_PAT.length(), password);
+
+        return sbuf.toString();
+    }
+
     public static String getResponse(URL url) throws IOException
     {
         String thisMethod = ".getResponse() ";
