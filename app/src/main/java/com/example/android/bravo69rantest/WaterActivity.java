@@ -28,25 +28,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-//import androidx.annotation.NonNull;
-//import androidx.appcompat.app.AppCompatActivity;
-
-public class SensorsActivity extends AppCompatActivity
+public class WaterActivity extends AppCompatActivity
 {
     public static final String TAG = "SensorsActivity";
     public static Object lockDataThread = new Object();
 
     public float dpRatio;
     public int idp8;
-//    public static String strUrl = "https://www.rcofalcon.com/Image2000/rest/recordservice/getRecordsUpdatedXFiltered/69BAdmin/69BAdmin/Sensor/-5000/+/+/+/+/Active/+/true/+/+/SensorId%2CSensor+Name%2CTitle%2CValue%2CSensorType/+/+";
-    public static String URL_ACTIVITY = InternetUtils.HOST_PAT + "/Image2000/rest/recordservice/getRecordsUpdatedXFiltered/" + InternetUtils.LOGIN_PAT + "/" + InternetUtils.PASSWORD_PAT + "/Sensor/-5000/+/+/+/+/Active/+/true/+/+/SensorId%2CSensor+Name%2CTitle%2CValue%2CSensorType/+/+";
-//    public static String strUrlWater = "https://localhost/Image2000/rest/recordservice/getRecordsUpdatedXFiltered/69BAdmin/69BAdmin/Analytic/-5000/+/+/+/+/SampleRateUnits/+/now/+/+/+/+/+";
+    public static String URL_ACTIVITY = InternetUtils.HOST_PAT + "/Image2000/rest/recordservice/getRecordsUpdatedXFiltered/" + InternetUtils.LOGIN_PAT + "/" + InternetUtils.PASSWORD_PAT + "/Analytic/-5000/+/+/+/+/SampleRateUnits/+/now/+/+/Title%2CSensorRecordId%2CValue/+/+";
 
     public TextView txt1;
 
     private Button buttonGetData;
     private Handler httpHandler;
-    private SensorsActivity.dataWorker dataWorker;
+    private DataWorker sensorDataWorker;
     private String url;
 
     @Override
@@ -60,18 +55,16 @@ public class SensorsActivity extends AppCompatActivity
         Log.d(TAG, "onCreate() Start.");
         setContentView(R.layout.activity_sensors);
 
-        httpHandler = new DataResultHandler(this, Looper.getMainLooper());
+        httpHandler = new ResultDataHandler(this, Looper.getMainLooper());
         Log.d(TAG, "onCreate() End.");
 
-        Log.d(TAG, "onCreate() Rms.getUrl()=" + Rms.getUrl());
-        Toast.makeText(this, "[" + TAG + ".onCreate] Rms.getUrl()=" + Rms.getUrl(), Toast.LENGTH_LONG).show();;
     }
 
     @Override
     protected void onStart()
     {
         super.onStart();
-        startDataWorkerThread(url);
+        startSensorDataWorkerThread(url);
         Log.d(TAG, "onStart() Start, End.");
     }
 
@@ -81,11 +74,11 @@ public class SensorsActivity extends AppCompatActivity
         super.onPause();
         Log.d(TAG, "onPause() Start.");
 
-        if (dataWorker != null)
+        if (sensorDataWorker != null)
         {
             Log.d(TAG, "onPause() calling  killSensorDataWorkerThread() and setting member to null.");
             killSensorDataWorkerThread();
-            this.dataWorker = null;
+            this.sensorDataWorker = null;
         }
         Log.d(TAG, "onPause() End.");
     }
@@ -101,7 +94,7 @@ public class SensorsActivity extends AppCompatActivity
 
     public void killSensorDataWorkerThread()
     {
-        if (dataWorker != null)
+        if (sensorDataWorker != null)
         {
             Log.d(TAG, "onPause() calling  sensorDataWorker.kill().");
 //            synchronized (lockDataThread)
@@ -109,18 +102,15 @@ public class SensorsActivity extends AppCompatActivity
 //                lockDataThread.notify();
 //            }
 
-            dataWorker.kill();
+            sensorDataWorker.kill();
         }
     }
 
-    /**
-     * @param view
-     */
     @Deprecated // just for testing.
     public void onClickButtonGetData(View view)
     {
         Log.d(TAG, "onClickButtonGetData start.");
-        startDataWorkerThread(url);
+        startSensorDataWorkerThread(url);
 //        LinearLayout linearLayout = (LinearLayout) findViewById(R.id.sensorlayout);
 //        if (txt1 == null)
 //        {
@@ -137,20 +127,20 @@ public class SensorsActivity extends AppCompatActivity
         Log.d(TAG, "onClickButtonGetData End.");
     }
 
-    private void startDataWorkerThread(String url)
+    private void startSensorDataWorkerThread(String url)
     {
         Log.d(TAG, "startSensorDataWorkerThread() Start.");
 
-        if (dataWorker == null || !dataWorker.isAlive())
+        if (sensorDataWorker == null || !sensorDataWorker.isAlive())
         {
-            Log.d(TAG, "startDataWorkerThread() Starting new sensorDataWorker thread.");
+            Log.d(TAG, "startSensorDataWorkerThread() Starting new sensorDataWorker thread.");
             Log.d(TAG, "onClickButtonGetData starting sensorDataWorker thread.");
-            dataWorker = new dataWorker(httpHandler, url);
-            dataWorker.start();
+            sensorDataWorker = new DataWorker(httpHandler, url);
+            sensorDataWorker.start();
         } else
-            Log.d(TAG, "startDataWorkerThread() sensorDataWorker thread already started.");
+            Log.d(TAG, "startSensorDataWorkerThread() sensorDataWorker thread already started.");
 
-        Log.d(TAG, "startDataWorkerThread() End.");
+        Log.d(TAG, "startSensorDataWorkerThread() End.");
     }
 
     public static String getData(String url) throws IOException
@@ -165,15 +155,15 @@ public class SensorsActivity extends AppCompatActivity
     /**
      *
      */
-    public static class dataWorker extends Thread
+    public static class DataWorker extends Thread
     {
-        public static final String TAG = "dataWorker";
+        public static final String TAG = "DataWorker";
         private AtomicBoolean isCanceled = new AtomicBoolean(false);
         private String strResp;
         private Handler responseHandler;
         private String url;
 
-        public dataWorker(Handler responseHandler, String url)
+        public DataWorker(Handler responseHandler, String url)
         {
             this.responseHandler = responseHandler;
             this.url = url;
@@ -189,23 +179,16 @@ public class SensorsActivity extends AppCompatActivity
             {
                 try
                 {
-                    Log.d(TAG, "run() About to call getData().");
-                    try
-                    {
-                        strResp = getData(url);
-                    } catch (IOException e)
-                    {
-                        e.printStackTrace();
-                        strResp = Arrays.toString(e.getStackTrace());
-                    }
+                    Log.d(TAG, "run() About to call getSensorData().");
+                    strResp = getData(url);
 //                    strResp = "My Fake Response... Hah!" +
 //                            " time:" + System.currentTimeMillis();
                     if (false)
                         throw new IOException("My Fake IO Exception, just to make compiler happy.");
-                    Log.d(TAG, "run() After call getData().  strResp=\r\n" + strResp);
+                    Log.d(TAG, "run() After call getSensorData().  strResp=\r\n" + strResp);
                     Bundle bndl = new Bundle();
                     bndl.putCharSequence("response", strResp);
-//                    String strTest = bndl.getString("response");
+                    String strTest = bndl.getString("response");
 
                     Message msg = this.responseHandler.obtainMessage(1, null);
                     msg.setData(bndl);
@@ -222,12 +205,12 @@ public class SensorsActivity extends AppCompatActivity
                 } catch (IOException e)
                 {
                     e.printStackTrace();
+                    strResp = Arrays.toString(e.getStackTrace());
                 } catch (InterruptedException e)
                 {
                     break;
                 }
             }
-
         }
 
 
@@ -250,9 +233,9 @@ public class SensorsActivity extends AppCompatActivity
     /**
      *
      */
-    public static class DataResultHandler extends Handler
+    public static class ResultDataHandler extends Handler
     {
-        public static final String TAG = "SensorHandler";
+        public static final String TAG = "ResultDataHandler";
         private Gson gson = new Gson();
 
         public AppCompatActivity activity;
@@ -263,16 +246,16 @@ public class SensorsActivity extends AppCompatActivity
         private SimpleDateFormat dfmt;
         private Comparator<RecordDataMapped> compData;
         private U.ISimpleFilter filt;
+
         public static final String COMPARE_FIELD = "Title";
 
-        public DataResultHandler(AppCompatActivity activity, Looper looper)
+        public ResultDataHandler(AppCompatActivity activity, Looper looper)
         {
             super(looper);
             this.activity = activity;
             dpRatio = activity.getResources().getDisplayMetrics().density;
             idp8 = (int) (8 * dpRatio);
             nfmt = new DecimalFormat("################.#");
-            Log.d(TAG, "Exiting constructor.");
             dfmt = new SimpleDateFormat("HH:mm:ss");
 
             filt = new U.ISimpleFilter()
@@ -288,7 +271,7 @@ public class SensorsActivity extends AppCompatActivity
                 }
             };
 
-            // Initialize comparator used to sort sensor records by Sensor Name.
+            // Initialize comparator used to sort sensor records by Name.
             compData = new Comparator<RecordDataMapped>()
             {
                 @Override
@@ -298,14 +281,14 @@ public class SensorsActivity extends AppCompatActivity
                 }
             };
 
+            Log.d(TAG, "Exiting constructor.");
         }
 
-//        public static final String ifNull(String str)
-//        {
-//            if (str == null) str = "";
-//            return str;
-//        }
-
+        public static final String ifNull(String str)
+        {
+            if (str == null) str = "";
+            return str;
+        }
 
         @SuppressLint("ResourceType")
         @Override
@@ -324,33 +307,10 @@ public class SensorsActivity extends AppCompatActivity
 
                 String strResp = bndl.getCharSequence("response").toString();
 
-                RecordDataMapped[] arRecsAll = gson.fromJson(strResp, RecordDataMapped[].class);
+                RecordDataMapped[] recs = gson.fromJson(strResp, RecordDataMapped[].class);
+                Arrays.sort(recs, compData);
 
-                RecordDataMapped[] arRecs = new RecordDataMapped[arRecsAll.length];
-                int ix = 0;
-
-                // one pass to eliminate certain sensors before sort.
-                for (int i = 0; i < arRecsAll.length; i++)
-                {
-                    RecordDataMapped rec = arRecsAll[i];
-                    int iObjectId = (int) rec.LobjectId;
-                    Map<String, String> mapCodingInfo = rec.mapCodingInfo;
-                    String strSensorId = mapCodingInfo.get("SensorId");
-                    String strSensorName = mapCodingInfo.get("Sensor Name");
-                    String strSensorType = mapCodingInfo.get("Sensor Type");
-                    if (!U.isIgnoreSensor(strSensorId, strSensorName, strSensorType))
-                        arRecs[ix++] = rec;
-                }
-
-                int iSensors = ix;
-
-                Log.d(TAG, "iSensors=" + iSensors + ", arRecs.length=" + arRecs.length
-                        + ", arRecs={" + Arrays.toString(arRecs) + "}");
-
-
-                Arrays.sort(arRecs, 0, ix, compData);
-
-                Log.d(TAG, "handleMessage() Start. strResp=" + strResp + ", arRecs.length=" + arRecs.length);
+                Log.d(TAG, "handleMessage() Start. strResp=" + strResp + ", recs.length=" + recs.length);
                 Log.d(TAG, "");
 
                 LinearLayout linearLayout = (LinearLayout) activity.findViewById(R.id.sensorlayout);
@@ -366,78 +326,59 @@ public class SensorsActivity extends AppCompatActivity
                 tvTime.setText("Last Refresh: " + dfmt.format(System.currentTimeMillis()));
 //                linearLayout.addView(tvTime);
 
-                for (int i = 0; i < iSensors; i++)
+                for (int i = 0; i < recs.length; i++)
                 {
-                    RecordDataMapped rec = arRecs[i];
+                    RecordDataMapped rec = recs[i];
                     int iObjectId = (int) rec.LobjectId;
                     Map<String, String> mapCodingInfo = rec.mapCodingInfo;
 
                     Log.d(TAG, "i=" + i + ", mapCodingInfo=" + mapCodingInfo);
-                    String sensorId = mapCodingInfo.get("SensorId");
+                    String sensorId = mapCodingInfo.get("SensorRecordId");
                     String strSensorTitle = mapCodingInfo.get("Title");
 
                     TextView tvSensorValue = mapSensorViews.get(sensorId);
 
                     if (tvSensorValue == null)
                     {
-                        Log.d(TAG, "handleMessage() creating tv TextView, adding to linearLayout.");
+                        Log.d(TAG, "handleMessage() creating RelativeLayout holding sensor label, value textviews, adding to linearLayout.");
+                        // RelativeLayout object, mainly so we can left and right justify the label and value.
                         RelativeLayout sensorLayout = new RelativeLayout(this.activity);
-//                        RelativeLayout.LayoutParams vparams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-                        // ******* Note - must use LinearLayout.LayoutParams, the layout type of the parent. -RAN 5/24/2020
                         LinearLayout.LayoutParams vparams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                        vparams.setMargins(0, idp8*2, 0, idp8*2);
-//                        vparams.height = 4*idp8;
+                        vparams.setMargins(0, idp8*2, 0, idp8*2); // spacing margins.  Maybe better to use padding so more area for user to touch when selecting graph.  Or maybe not, less error.
                         sensorLayout.setLayoutParams(vparams); // -RAN 5/24/2020
-//                    sensorLayout.setBackgroundColor(Color.GREEN);
-//                    RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-//                    sensorLayout.setOrientation(RelativeLayout.HORIZONTAL);
-//                    sensorLayout.setLayoutParams(layoutParams);
-//                    sensorLayout.getLayoutParams().width = ActionBar.LayoutParams.MATCH_PARENT;
+//                    sensorLayout.setBackgroundColor(Color.GREEN); // color for troubleshooting.
+                        // TextView for sensor/device label.
+                        Log.d(TAG, "strSensorTitle=" + strSensorTitle);
                         TextView tvSensorTitle = new TextView(this.activity);
-                        tvSensorTitle.setId(1);
+                        tvSensorTitle.setId(1); // set an ID for the handler to recognize.
                         tvSensorTitle.setTextColor(Color.BLACK);
                         tvSensorTitle.setTextSize(16);
                         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
                         params.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
                         params.setMargins(idp8, 0, idp8, 0);
                         tvSensorTitle.setLayoutParams(params);
-//                    button1.setLayoutParams(params);
-                        //                    layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT, 1);
-
-
-                        Log.d(TAG, "strSensorTitle=" + strSensorTitle);
-
-//                    tvSensorTitle.setText(mapCodingInfo.get(mapCodingInfo.get("Sensor Name")));
                         tvSensorTitle.setText(strSensorTitle);
                         Log.d(TAG, "tvSensorTitle:" + tvSensorTitle.getText().toString());
-//                    tvSensorTitle.setGravity(Gravity.LEFT);
+
                         sensorLayout.addView(tvSensorTitle);
                         tvSensorValue = new TextView(this.activity);
                         tvSensorValue.setId(2);
                         tvSensorValue.setTextColor(Color.BLACK);
                         tvSensorValue.setTextSize(16);
-//                    tvSensorValue.setGravity(Gravity.RIGHT);
                         params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
                         params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
                         params.setMargins(idp8, 0, idp8, 0);
                         tvSensorValue.setLayoutParams(params);
                         sensorLayout.addView(tvSensorValue);
-//                    layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, 2);
                         this.mapSensorViews.put(sensorId, tvSensorValue);
 
-//                    sensorLayout.setLayoutParams(layoutParams);
                         linearLayout.addView(sensorLayout);
-//                    linearLayout.setBackgroundColor(Color.TRANSPARENT);
-
                     }
                     String strValue = mapCodingInfo.get("Value");
                     float fValue = Float.parseFloat(strValue);
                     tvSensorValue.setText(nfmt.format(fValue));
                     Log.d(TAG, "tvSensorValue:" + tvSensorValue.getText().toString());
-//                    v.setText(System.currentTimeMillis() + "\r\n" + strResp);
                 }
-
-//                txt1.setText(System.currentTimeMillis() + "\r\n" + strResp);
             } else
             {
                 Log.d(TAG, "handleMessage() Not my message, msg.what=" + msg.what);
